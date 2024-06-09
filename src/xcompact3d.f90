@@ -18,6 +18,7 @@ program xcompact3d
   use genepsi, only : genepsi3d
   use mhd,    only : Bm,mhd_active,mhd_equation,test_magnetic, &
                      solve_poisson_mhd,mhd_sta
+  use smartredis_client, only : client_type
 
   implicit none
 

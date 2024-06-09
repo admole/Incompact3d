@@ -1,18 +1,19 @@
 include_directories(${2decomp_INCLUDE_DIR}
+                    ${smartredis_INCLUDE_DIR}
                     ${CMAKE_SOURCE_DIR}/src)
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message(STATUS "PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
 
-add_executable(xcompact3d 
-                    acl_controller.f90 
-                    acl_elem.f90 
-                    acl_farm_controller.f90 
+add_executable(xcompact3d
+                    acl_controller.f90
+                    acl_elem.f90
+                    acl_farm_controller.f90
                     acl_model.f90
-                    acl_out.f90  
+                    acl_out.f90
                     acl_source.f90
                     acl_turb.f90
-                    acl_utils.f90 
+                    acl_utils.f90
                     adm.f90
                     airfoils.f90
                     Case-ABL.f90
@@ -51,18 +52,29 @@ add_executable(xcompact3d
                     tools.f90
                     transeq.f90
                     turbine.f90
-		    utilities.f90
+                    utilities.f90
                     variables.f90
                     visu.f90
                     xcompact3d.f90)
 
+# Ensure the library directory is included
+link_directories(${smartredis_LIBRARY_DIR})
+
+message(STATUS "Linking directories: ${smartredis_LIBRARY_DIR}")
+message(STATUS "SmartRedis found: ${smartredis_FOUND}")
+
 target_link_libraries(xcompact3d PRIVATE decomp2d)
+
+if (smartredis_FOUND)
+  message(STATUS "Linking SmartRedis libraries")
+  target_link_libraries(xcompact3d PRIVATE smartredis PRIVATE smartredis-fortran)
+endif()
 
 if (MPI_FOUND)
   target_link_libraries(xcompact3d PRIVATE MPI::MPI_Fortran)
 endif (MPI_FOUND)
 
-if(ADIOS2_FOUND)
+if (ADIOS2_FOUND)
   #target_link_libraries(xcompact3d ${ADIOS_LIBRARIES})
   target_link_libraries(xcompact3d PRIVATE adios2::fortran_mpi)
 endif()

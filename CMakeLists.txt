@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)                        
+cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0074 NEW)
 
 project(Xcompact3d LANGUAGES Fortran)
@@ -9,6 +9,7 @@ if (IO_BACKEND MATCHES "adios2")
 endif (IO_BACKEND MATCHES "adios2")
 
 set(DESCRIPTION "Building Xcompact3d using cmake")
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 message(STATUS "building ${PROJECT_NAME}")
 
@@ -44,6 +45,7 @@ endif (CMAKE_BUILD_TYPE MATCHES "NONE")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake" "${CMAKE_SOURCE_DIR}/cmake/compilers" "${CMAKE_SOURCE_DIR}/cmake/fft")
 find_package(DECOMP2D REQUIRED)
+find_package(SmartRedis REQUIRED)
 
 # Despite IO is handled by 2DECOMP&FFT we need to set it
 set (IO_BACKEND "mpi" CACHE STRING "Default IO backend (mpi (default) or adios2)")
@@ -52,6 +54,11 @@ set_property(CACHE IO_BACKEND PROPERTY STRINGS mpi adios2)
 include(X3D_MPI)
 
 include(X3D_Compilers)
+
+# RPATH settings
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_BUILD_RPATH ${smartredis_LIBRARY_DIR})
+set(CMAKE_INSTALL_RPATH ${smartredis_LIBRARY_DIR})
 
 # Add the sources
 add_subdirectory(src)
@@ -62,7 +69,7 @@ option(BUILD_TESTING_FULL "Build all tests" OFF)
 if (${BUILD_TESTING})
   include(CTest)
   add_subdirectory(examples)
-  add_subdirectory(test) 
+  add_subdirectory(test)
 endif (${BUILD_TESTING})
 
 # Add a prettify target
