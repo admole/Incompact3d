@@ -53,6 +53,22 @@ include(X3D_MPI)
 
 include(X3D_Compilers)
 
+set(SMARTREDIS_INSTALL_PATH ../smartredis/install)
+find_library(SMARTREDIS_LIBRARY smartredis
+             PATHS ${SMARTREDIS_INSTALL_PATH}/lib/
+             NO_DEFAULT_PATH REQUIRED
+)
+
+find_library(SMARTREDIS_FORTRAN_LIBRARY smartredis-fortran
+             PATHS ${SMARTREDIS_INSTALL_PATH}/lib/
+             NO_DEFAULT_PATH REQUIRED
+)
+
+include_directories(SYSTEM
+    /usr/local/include
+    ${SMARTREDIS_INSTALL_PATH}/include
+)
+
 # Add the sources
 add_subdirectory(src)
 

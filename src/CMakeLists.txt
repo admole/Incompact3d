@@ -56,7 +56,10 @@ add_executable(xcompact3d
                     visu.f90
                     xcompact3d.f90)
 
-target_link_libraries(xcompact3d PRIVATE decomp2d)
+target_link_libraries(xcompact3d PRIVATE decomp2d
+    ${SMARTREDIS_LIBRARY}
+    ${SMARTREDIS_FORTRAN_LIBRARY}
+)
 
 if (MPI_FOUND)
   target_link_libraries(xcompact3d PRIVATE MPI::MPI_Fortran)
