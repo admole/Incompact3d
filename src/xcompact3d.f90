@@ -18,16 +18,8 @@ program xcompact3d
   use genepsi, only : genepsi3d
   use mhd,    only : Bm,mhd_active,mhd_equation,test_magnetic, &
                      solve_poisson_mhd,mhd_sta
-  use iso_c_binding
-  use smartredis_client, only : client_type
 
   implicit none
-
-  integer :: result
-  type(client_type) :: client
-
-  result = client%initialize("smartredis_database")
-!  if (result .ne. SRNoError) error stop 'client%initialize failed'
 
   call init_xcompact3d()
 
