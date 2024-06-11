@@ -1,15 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0074 NEW)
+set(CMAKE_CXX_STANDARD 17)
 
 project(Xcompact3d LANGUAGES Fortran)
 set(version 5.0)
+
 if (IO_BACKEND MATCHES "adios2")
   # Can be useful to also activate CXX, sometimes is needed by packages
   enable_language(C CXX)
 endif (IO_BACKEND MATCHES "adios2")
 
 set(DESCRIPTION "Building Xcompact3d using cmake")
-set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 message(STATUS "building ${PROJECT_NAME}")
 
@@ -21,8 +23,8 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 # Add support for CMAKE_DEPENDENT_OPTION
-INCLUDE(CMakeDependentOption)
-INCLUDE(CMakeParseArguments)
+include(CMakeDependentOption)
+include(CMakeParseArguments)
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
@@ -56,9 +58,9 @@ include(X3D_MPI)
 include(X3D_Compilers)
 
 # RPATH settings
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-set(CMAKE_BUILD_RPATH ${smartredis_LIBRARY_DIR})
-set(CMAKE_INSTALL_RPATH ${smartredis_LIBRARY_DIR})
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_BUILD_RPATH ${smartredis_LIBRARY_DIR})
+#set(CMAKE_INSTALL_RPATH ${smartredis_LIBRARY_DIR})
 
 # Add the sources
 add_subdirectory(src)

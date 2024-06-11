@@ -1,5 +1,5 @@
-include_directories(${2decomp_INCLUDE_DIR}
-                    ${smartredis_INCLUDE_DIR}
+include_directories(${DECOMP2D_INCLUDE_DIR}
+                    ${SMARTREDIS_INCLUDE_DIR}
                     ${CMAKE_SOURCE_DIR}/src)
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
@@ -57,17 +57,16 @@ add_executable(xcompact3d
                     visu.f90
                     xcompact3d.f90)
 
-# Ensure the library directory is included
-link_directories(${smartredis_LIBRARY_DIR})
+link_directories(${SMARTREDIS_LIBRARY_DIR})
 
-message(STATUS "Linking directories: ${smartredis_LIBRARY_DIR}")
-message(STATUS "SmartRedis found: ${smartredis_FOUND}")
+message(STATUS "Linking directories: ${SMARTREDIS_LIBRARY_DIR}")
+message(STATUS "SmartRedis found: ${SMARTREDIS_FOUND}")
 
 target_link_libraries(xcompact3d PRIVATE decomp2d)
 
-if (smartredis_FOUND)
-  message(STATUS "Linking SmartRedis libraries")
-  target_link_libraries(xcompact3d PRIVATE smartredis PRIVATE smartredis-fortran)
+if (SMARTREDIS_FOUND)
+  message(STATUS "Linking libraries: ${SMARTREDIS_LIBRARY_DIR}/libsmartredis.so ${SMARTREDIS_LIBRARY_DIR}/libsmartredis-fortran.so")
+  target_link_libraries(xcompact3d PRIVATE ${SMARTREDIS_LIBRARY_DIR}/libsmartredis.so ${SMARTREDIS_LIBRARY_DIR}/libsmartredis-fortran.so)
 endif()
 
 if (MPI_FOUND)
