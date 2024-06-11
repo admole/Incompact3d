@@ -1,0 +1,19 @@
+# downloadBuildsmartredis.cmake.in
+#
+cmake_minimum_required(VERSION 3.0.2)
+
+project(downloadBuildsmartredis NONE)
+
+include(ExternalProject)
+
+ExternalProject_Add(downloadBuildsmartredis
+    GIT_REPOSITORY    "https://github.com/CrayLabs/SmartRedis.git"
+    GIT_TAG           "develop"
+    SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/smartredis-src"
+    INSTALL_DIR       "${CMAKE_CURRENT_BINARY_DIR}/smartredis-opt"
+    CMAKE_ARGS        -DREDISPP_INCLUDE_DIR=${REDISPP_INCLUDE_DIR} -DREDISPP_LIBRARY=${REDISPP_LIBRARY}
+                      -DHIREDIS_INCLUDE_DIR=${HIREDIS_INCLUDE_DIR} -DHIREDIS_LIBRARY=${HIREDIS_LIBRARY}
+    BUILD_COMMAND     make lib-with-fortran
+    TEST_COMMAND      ""
+)
+

@@ -1,14 +1,17 @@
-cmake_minimum_required(VERSION 3.20)                        
+cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0074 NEW)
+set(CMAKE_CXX_STANDARD 17)
 
 project(Xcompact3d LANGUAGES Fortran)
 set(version 5.0)
+
 if (IO_BACKEND MATCHES "adios2")
   # Can be useful to also activate CXX, sometimes is needed by packages
   enable_language(C CXX)
 endif (IO_BACKEND MATCHES "adios2")
 
 set(DESCRIPTION "Building Xcompact3d using cmake")
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 message(STATUS "building ${PROJECT_NAME}")
 
@@ -20,8 +23,8 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 # Add support for CMAKE_DEPENDENT_OPTION
-INCLUDE(CMakeDependentOption)
-INCLUDE(CMakeParseArguments)
+include(CMakeDependentOption)
+include(CMakeParseArguments)
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
@@ -44,6 +47,7 @@ endif (CMAKE_BUILD_TYPE MATCHES "NONE")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake" "${CMAKE_SOURCE_DIR}/cmake/compilers" "${CMAKE_SOURCE_DIR}/cmake/fft")
 find_package(DECOMP2D REQUIRED)
+find_package(SmartRedis REQUIRED)
 
 # Despite IO is handled by 2DECOMP&FFT we need to set it
 set (IO_BACKEND "mpi" CACHE STRING "Default IO backend (mpi (default) or adios2)")
@@ -52,22 +56,6 @@ set_property(CACHE IO_BACKEND PROPERTY STRINGS mpi adios2)
 include(X3D_MPI)
 
 include(X3D_Compilers)
-
-set(SMARTREDIS_INSTALL_PATH ../smartredis/install)
-find_library(SMARTREDIS_LIBRARY smartredis
-             PATHS ${SMARTREDIS_INSTALL_PATH}/lib/
-             NO_DEFAULT_PATH REQUIRED
-)
-
-find_library(SMARTREDIS_FORTRAN_LIBRARY smartredis-fortran
-             PATHS ${SMARTREDIS_INSTALL_PATH}/lib/
-             NO_DEFAULT_PATH REQUIRED
-)
-
-include_directories(SYSTEM
-    /usr/local/include
-    ${SMARTREDIS_INSTALL_PATH}/include
-)
 
 # Add the sources
 add_subdirectory(src)
@@ -78,7 +66,7 @@ option(BUILD_TESTING_FULL "Build all tests" OFF)
 if (${BUILD_TESTING})
   include(CTest)
   add_subdirectory(examples)
-  add_subdirectory(test) 
+  add_subdirectory(test)
 endif (${BUILD_TESTING})
 
 # Add a prettify target
