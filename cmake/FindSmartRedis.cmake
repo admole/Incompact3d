@@ -56,5 +56,3 @@ else()
   message(STATUS "SmartRedis library directory: ${SMARTREDIS_LIBRARY_DIR}")
 endif()
 
-mark_as_advanced(SMARTREDIS_INCLUDE_DIR SMARTREDIS_LIBRARY SMARTREDIS_FORTRAN_LIBRARY)
-
