@@ -142,7 +142,7 @@ contains
       integer :: idisc,i,j,k,ierr,result
       real(mytype) :: xmesh,ymesh,zmesh,deltax,deltay,deltaz,deltan,deltar,disc_thick,hgrid,projected_x,projected_y,projected_z
       real(kind=c_double), dimension(Ndiscs) :: AllYawAngs
-      real(kind=c_double), dimension(1) :: controller_done,simulation_done
+      real(kind=c_double), dimension(1) :: controller_done
 
 
       ! Specify the actuator discs
@@ -171,8 +171,7 @@ contains
 
           controller_done(1) = 0
           result = client%put_tensor('i_yaws_done', controller_done, shape(controller_done))
-          simulation_done(1) = 1
-          result = client%put_tensor('i_sim_done', simulation_done, shape(simulation_done))
+
           ! Compute Gamma
           call actuator_disc_model_compute_gamma(Nad,admCoords)
 
@@ -377,7 +376,6 @@ contains
                           actuatordisc(idisc)%TiltAng
              close(2020)
 
-!             result = client%put_tensor('i_turbine'//trim(int2str(idisc))//'_power', actuator_disc(idisc)%Power, shape(actuator_disc(idisc)%Power))
 
          enddo
       endif
@@ -385,5 +383,33 @@ contains
       return 
 
     end subroutine actuator_disc_model_write_output
+
+
+    !*******************************************************************************
+    !
+    subroutine actuator_disc_model_smartredis_output()
+    !
+    !*******************************************************************************
+
+      use param, only: itime, initstat, dt
+
+      implicit none
+      integer :: idisc,result
+      real(kind=c_double), dimension(Nad) :: AllPowers
+      real(kind=c_double), dimension(1) :: simulation_done
+
+      if (Nad>0) then
+          AllPowers = [(ActuatorDisc(idisc)%Power, idisc=1,Nad)]
+          result = client%put_tensor('i_turbine_powers', AllPowers, shape(AllPowers))
+      endif
+
+!      send probe data...
+
+      simulation_done(1) = 1
+      result = client%put_tensor('i_sim_done', simulation_done, shape(simulation_done))
+
+      return
+
+    end subroutine actuator_disc_model_smartredis_output
 
 end module actuator_disc_model

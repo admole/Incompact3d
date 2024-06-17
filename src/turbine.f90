@@ -90,6 +90,10 @@ contains
          endif
       endif
 
+      if (nrank==0.and.mod(itime,icontrolfreq)==0) then
+         call actuator_disc_model_smartredis_output()
+      end if
+
     end subroutine turbine_output
 
 end module turbine

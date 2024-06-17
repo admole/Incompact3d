@@ -40,8 +40,8 @@ print(f'created client at address {db_address}')
 client.put_tensor("i_sim_done", np.array([0.]))
 client.put_tensor("i_yaws_done", np.array([1.]))
 
-for it in range(1000):
-    print(f'Iteration: {it}')
+for it in range(100):
+    print(f'\nIteration: {it}')
     yaws = it%60. - 30.
     print(f'Yaw angle: {yaws}')
     print('Sending...')
@@ -51,8 +51,11 @@ for it in range(1000):
     print('Waiting for update...')
     while(client.get_tensor("i_sim_done") == False):
         continue
-    print('Simulation updated\n')
-	# read reward, observation
+    print('Simulation updated')
+    # read reward, observation
+    powers = client.get_tensor("i_turbine_powers")
+    print(f'Turbine Powers = {powers}')
+    total_power = sum(powers)
     client.put_tensor("i_sim_done", np.array([0.]))
 
 # shutdown the database because we don't need it anymore
