@@ -55,7 +55,9 @@ contains
          call Compute_Momentum_Source_Term_pointwise
          call actuator_line_model_update(t,dt)
       else if (iturbine.eq.2) then
-         call actuator_disc_model_read_input(Nad,admCoords)
+          if (mod(itime,icontrolfreq)==0) then
+             call actuator_disc_model_read_input(Nad,admCoords)
+          end if
          call actuator_disc_model_compute_source(ux1,uy1,uz1)
       endif
 

@@ -45,7 +45,7 @@ contains
     !*******************************************************************************
         
       use var, only: GammaDisc
-      use param, only: dx,dy,dz,istret,irestart,itime,iturboutput,initstat
+      use param, only: dx,dy,dz,istret,irestart,itime,iturboutput,initstat,icontrolfreq
       use decomp_2d
       use decomp_2d_io
       use MPI
@@ -59,8 +59,13 @@ contains
       real :: temp
       real(mytype) :: xmesh,ymesh,zmesh,deltax,deltay,deltaz,deltan,deltar,disc_thick,hgrid,projected_x,projected_y,projected_z
 
-!      result = client%initialize("smartredis_database")
-!      !  if (result .ne. SRNoError) error stop 'client%initialize failed'
+      if ((icontrolfreq>=1).and.(nrank==0)) then
+          write(*,*) '==========================================================='
+          write(*,*) 'Initialising smartredis database'
+          write(*,*) '==========================================================='
+          result = client%initialize("smartredis_database")
+          !  if (result .ne. SRNoError) error stop 'client%initialize failed'
+      end if
 
       ! ADM not yet set-up for stretched grids
       if (istret/=0) then
@@ -136,35 +141,40 @@ contains
       real(mytype) :: GammaDisc_tot,GammaDisc_partial
       integer :: idisc,i,j,k,ierr,result
       real(mytype) :: xmesh,ymesh,zmesh,deltax,deltay,deltaz,deltan,deltar,disc_thick,hgrid,projected_x,projected_y,projected_z
+      real(kind=c_double), dimension(Ndiscs) :: AllYawAngs
+      real(kind=c_double), dimension(1) :: controller_done,simulation_done
+
 
       ! Specify the actuator discs
       Nad=Ndiscs
+      controller_done(1) = 0
+      do while (int(controller_done(1)) == 0)
+          write(*,*) 'Checking if smartredis database updated?'
+
+          result = client%unpack_tensor('i_yaws_done', controller_done, shape(controller_done))
+          write(*,*) "db value for i_yaws_done = ", int(controller_done(1))
+
+      end do
 
       if (Nad>0) then
+          write(*,*) 'Reading yaw angles from smartredis database'
+          ! Read the disc data
+          ! Fill AllYawAngs with YawAng values from each ActuatorDisc
+!          AllYawAngs = [(ActuatorDisc(idisc)%YawAng, idisc=1,Nad)]
+          result = client%unpack_tensor('i_yaws', AllYawAngs, shape(AllYawAngs))
+          do idisc=1,Nad
+              ActuatorDisc(idisc)%YawAng = AllYawAngs(idisc)
+              ActuatorDisc(idisc)%RotN(1)=cos(ActuatorDisc(idisc)%YawAng*conrad)*cos(ActuatorDisc(idisc)%TiltAng*conrad)
+              ActuatorDisc(idisc)%RotN(2)=sin(ActuatorDisc(idisc)%TiltAng*conrad)
+              ActuatorDisc(idisc)%RotN(3)=sin(ActuatorDisc(idisc)%YawAng*conrad)
+          end do
 
-         open(15,file=admCoords)
-         read(15,*)
-         do idisc=1,Nad
-            actuatordisc(idisc)%ID=idisc
-            read(15,'(A)') ReadLine
-            read(Readline,*) ActuatorDisc(idisc)%COR(1),ActuatorDisc(idisc)%COR(2),ActuatorDisc(idisc)%COR(3),&
-                             ActuatorDisc(idisc)%YawAng,ActuatorDisc(idisc)%TiltAng,ActuatorDisc(idisc)%D,&
-                             ActuatorDisc(idisc)%C_T,ActuatorDisc(idisc)%alpha
-            ! Remember: RotN(1)=cos(yaw_angle)*cos(tilt_angle), RotN(2)=sin(tilt_angle) and RotN(3)=sin(yaw_angle)
-            ActuatorDisc(idisc)%RotN(1)=cos(ActuatorDisc(idisc)%YawAng*conrad)*cos(ActuatorDisc(idisc)%TiltAng*conrad)
-            ActuatorDisc(idisc)%RotN(2)=sin(ActuatorDisc(idisc)%TiltAng*conrad)
-            ActuatorDisc(idisc)%RotN(3)=sin(ActuatorDisc(idisc)%YawAng*conrad)
-            ActuatorDisc(idisc)%Area=pi*(ActuatorDisc(idisc)%D**2._mytype)/4._mytype
-         enddo
-         close(15)
-
-         ! Read the disc data
-!         do idisc=1,Nad
-!             result = client%unpack_tensor('i_yaw'//trim(int2str(idisc)), ActuatorDisc(idisc)%YawAng, shape(ActuatorDisc(idisc)%YawAng))
-!         enddo
-
-         ! Compute Gamma
-         call actuator_disc_model_compute_gamma(Nad,admCoords)
+          controller_done(1) = 0
+          result = client%put_tensor('i_yaws_done', controller_done, shape(controller_done))
+          simulation_done(1) = 1
+          result = client%put_tensor('i_sim_done', simulation_done, shape(simulation_done))
+          ! Compute Gamma
+          call actuator_disc_model_compute_gamma(Nad,admCoords)
 
       endif
 

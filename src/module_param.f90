@@ -389,6 +389,7 @@ module param
   !! Turbine modelling
   integer :: iturbine        ! 1: Actuator line, 2: actuator disk
   integer :: iturboutput     ! Steps for turbine output
+  integer :: icontrolfreq     ! frequency for control with smartredis
   real(mytype) :: rho_air
   ! Actuator disk
   character(len=100) :: admCoords
