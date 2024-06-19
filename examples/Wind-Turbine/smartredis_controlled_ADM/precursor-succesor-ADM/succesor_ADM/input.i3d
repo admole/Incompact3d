@@ -90,6 +90,7 @@ ioutflow=0           ! Outflow flag
 ntimesteps=250     ! Number of planes saved in each file
 ninflows=4           ! Number of files storing inflow planes 
 inflowpath='../precursor/out/' ! Directory with the inflow files
+nprobes=2
 
 /End
 
@@ -156,6 +157,21 @@ rho_air=1.2
 T_relax = 1.1291
 icontrolfreq = 10
 instance = 1
+
+/End
+
+!=================
+&ProbesParam
+!=================
+
+flag_all_digits = F     ! By default, only 6 digits, 16 when True
+flag_extra_probes = F   ! By default, gradients are not monitored
+    xyzprobes(1,1) = 0.95
+    xyzprobes(2,1) = 0.125
+    xyzprobes(3,1) = 0.36
+    xyzprobes(1,2) = 1.25
+    xyzprobes(2,2) = 0.125
+    xyzprobes(3,2) = 0.36
 
 /End
 

@@ -260,7 +260,7 @@ contains
     use var, only : numscalar, nrhotime, npress
 
     use turbine, only : turbine_output
-    use probes, only : write_probes
+    use probes, only : write_probes, write_probes_smartredis
 
     real(mytype),dimension(xsize(1),xsize(2),xsize(3)), intent(in) :: ux1, uy1, uz1
     real(mytype),dimension(xsize(1),xsize(2),xsize(3),numscalar), intent(in) :: phi1
@@ -284,7 +284,10 @@ contains
 
     call overall_statistic(ux1, uy1, uz1, phi1, pp3, ep1)
 
-    if (iturbine.ne.0) then 
+    if (iturbine.ne.0) then
+      if (mod(itime,icontrolfreq)==0) then
+          call write_probes_smartredis(ux1, uy1, uz1)
+      end if
       call turbine_output()
     endif
 

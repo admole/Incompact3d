@@ -54,7 +54,11 @@ for it in range(100):
     print('Simulation updated')
     # read reward, observation
     powers = client.get_tensor("i_turbine_powers")
+    obs = client.get_tensor("i_probe_data")
+
+
     print(f'Turbine Powers = {powers}')
+    print(f'Observations = {obs}')
     total_power = sum(powers)
     client.put_tensor("i_sim_done", np.array([0.]))
 
