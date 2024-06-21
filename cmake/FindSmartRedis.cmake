@@ -31,8 +31,14 @@ else()
     endif()
   endif()
 
+    execute_process(
+    COMMAND git checkout v 0.5.3
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/smartredis-build/smartredis
+  )
+
   execute_process(
-    COMMAND make lib-with-fortran
+    COMMAND make lib-with-fortran SR_PYTHON=OFF
     RESULT_VARIABLE result
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/smartredis-build/smartredis
   )
