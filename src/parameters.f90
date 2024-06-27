@@ -72,7 +72,7 @@ subroutine parameter(input_i3d)
        istrat, idamping, iheight, TempRate, TempFlux, itherm, gravv, UG, T_wall, T_top, ishiftedper, iconcprec, pdl, dsampling 
   NAMELIST /CASE/ pfront
   NAMELIST/ALMParam/iturboutput,NTurbines,TurbinesPath,NActuatorlines,ActuatorlinesPath,eps_factor,rho_air
-  NAMELIST/ADMParam/Ndiscs,ADMcoords,iturboutput,rho_air,T_relax,icontrolfreq
+  NAMELIST/ADMParam/Ndiscs,ADMcoords,iturboutput,rho_air,T_relax,icontrolfreq,instance
   NAMELIST/MHDParam/mhd_equation,hartmann,stuart,rem, &
      nclxBx1, nclxBxn, nclyBx1, nclyBxn, nclzBx1, nclzBxn, &
      nclxBy1, nclxByn, nclyBy1, nclyByn, nclzBy1, nclzByn, &

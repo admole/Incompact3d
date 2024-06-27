@@ -411,14 +411,17 @@ contains
 
     use actuator_disc_model, only: client
     use iso_c_binding
-    use param, only : t
+    use param, only : t,instance
     real(mytype),intent(in),dimension(xstart(1):xend(1),xstart(2):xend(2),xstart(3):xend(3)) :: ux1, uy1, uz1
     real(kind=c_double), dimension(nprobes,3) :: AllProbes
     real(kind=c_double), dimension(nprobes,3) :: testProbes
     real(kind=c_double), dimension(1) :: oneProbe
     integer :: i, result
+    character(len=12) :: name_prefix
 
     if (nprobes<=0) return
+
+    write(name_prefix, '(I0)') instance
 
     do i = 1, nprobes
         AllProbes(i, 1) = ux1(nxprobes(i), nyprobes(i), nzprobes(i))
@@ -426,7 +429,7 @@ contains
         AllProbes(i, 3) = uz1(nxprobes(i), nyprobes(i), nzprobes(i))
     end do
 
-    result = client%put_tensor('i_probe_data', AllProbes, shape(AllProbes))
+    result = client%put_tensor(trim(name_prefix)//'_probe_data', AllProbes, shape(AllProbes))
 
   end subroutine write_probes_smartredis
 

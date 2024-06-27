@@ -35,6 +35,8 @@ end type ActuatorDiscType
     type(ActuatorDiscType), allocatable, save :: ActuatorDisc(:)
     type(client_type) :: client
     integer, save :: Nad                ! Number of the actuator disc turbines
+    character(len=12), save :: name_prefix
+
 
 contains
 
@@ -45,7 +47,7 @@ contains
     !*******************************************************************************
         
       use var, only: GammaDisc
-      use param, only: dx,dy,dz,istret,irestart,itime,iturboutput,initstat,icontrolfreq
+      use param, only: dx,dy,dz,istret,irestart,itime,iturboutput,initstat,icontrolfreq,instance
       use decomp_2d
       use decomp_2d_io
       use MPI
@@ -64,6 +66,8 @@ contains
           write(*,*) 'Initialising smartredis database'
           write(*,*) '==========================================================='
           result = client%initialize("smartredis_database")
+          write(name_prefix, '(I0)') instance
+          write(*,*) 'instance = ', trim(name_prefix)
           !  if (result .ne. SRNoError) error stop 'client%initialize failed'
       end if
 
@@ -144,24 +148,21 @@ contains
       real(kind=c_double), dimension(Ndiscs) :: AllYawAngs
       real(kind=c_double), dimension(1) :: controller_done
 
-
       ! Specify the actuator discs
       Nad=Ndiscs
       controller_done(1) = 0
+      write(*,*) 'Checking if smartredis database updated?'
       do while (int(controller_done(1)) == 0)
-          write(*,*) 'Checking if smartredis database updated?'
-
-          result = client%unpack_tensor('i_yaws_done', controller_done, shape(controller_done))
-          write(*,*) "db value for i_yaws_done = ", int(controller_done(1))
-
+          result = client%unpack_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
       end do
+      write(*,*) "Controller updated yaws on smartredis = ", int(controller_done(1))
 
       if (Nad>0) then
           write(*,*) 'Reading yaw angles from smartredis database'
           ! Read the disc data
           ! Fill AllYawAngs with YawAng values from each ActuatorDisc
 !          AllYawAngs = [(ActuatorDisc(idisc)%YawAng, idisc=1,Nad)]
-          result = client%unpack_tensor('i_yaws', AllYawAngs, shape(AllYawAngs))
+          result = client%unpack_tensor(trim(name_prefix)//'_yaws', AllYawAngs, shape(AllYawAngs))
           do idisc=1,Nad
               ActuatorDisc(idisc)%YawAng = AllYawAngs(idisc)
               ActuatorDisc(idisc)%RotN(1)=cos(ActuatorDisc(idisc)%YawAng*conrad)*cos(ActuatorDisc(idisc)%TiltAng*conrad)
@@ -170,7 +171,7 @@ contains
           end do
 
           controller_done(1) = 0
-          result = client%put_tensor('i_yaws_done', controller_done, shape(controller_done))
+          result = client%put_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
 
           ! Compute Gamma
           call actuator_disc_model_compute_gamma(Nad,admCoords)
@@ -400,13 +401,13 @@ contains
 
       if (Nad>0) then
           AllPowers = [(ActuatorDisc(idisc)%Power, idisc=1,Nad)]
-          result = client%put_tensor('i_turbine_powers', AllPowers, shape(AllPowers))
+          result = client%put_tensor(trim(name_prefix)//'_turbine_powers', AllPowers, shape(AllPowers))
       endif
 
 !      send probe data...
 
       simulation_done(1) = 1
-      result = client%put_tensor('i_sim_done', simulation_done, shape(simulation_done))
+      result = client%put_tensor(trim(name_prefix)//'_sim_done', simulation_done, shape(simulation_done))
 
       return
 
