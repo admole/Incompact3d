@@ -66,11 +66,11 @@ contains
           if (nrank==0) then
               write(*,*) '==========================================================='
               write(*,*) 'Initialising smartredis database'
-              write(*,*) 'instance = ', trim(name_prefix)
               write(*,*) '==========================================================='
           end if
           result = client%initialize("smartredis_database")
           write(name_prefix, '(I0)') instance
+          if (nrank==0) write(*,*) 'instance = ', trim(name_prefix)
           if (result /= 0) then
               write(*,*) 'SmartRedis initialization failed'
               call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
