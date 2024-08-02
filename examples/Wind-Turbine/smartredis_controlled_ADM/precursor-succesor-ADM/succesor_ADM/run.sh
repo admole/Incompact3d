@@ -1,8 +1,11 @@
 #!/bin/sh
 
-# Python controller
 export SR_DB_TYPE="Standalone"
 export SSDB=127.0.0.1:6781
+export SR_LOG_FILE="./log.sr"
+export SR_LOG_LEVEL=INFO
+
+# Python controller
 python controller.py&
 
 sleep 20
