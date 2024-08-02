@@ -71,7 +71,10 @@ contains
           end if
           result = client%initialize("smartredis_database")
           write(name_prefix, '(I0)') instance
-          if (result .ne. 0) error stop 'client%initialize failed'
+          if (result /= 0) then
+              write(*,*) 'SmartRedis initialization failed'
+              call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
+          endif
       end if
 
       ! ADM not yet set-up for stretched grids
@@ -157,12 +160,20 @@ contains
       do while (int(controller_done(1)) == 0)
           result = client%unpack_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
       end do
+      if (result /= 0) then
+          write(*,*) 'SmartRedis read failed'
+          call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
+      endif
 
       if (Nad>0) then
 !          write(*,*) 'Reading yaw angles from smartredis database'
           ! Read the disc data
           ! Fill AllYawAngs with YawAng values from each ActuatorDisc
           result = client%unpack_tensor(trim(name_prefix)//'_yaws', AllYawAngs, shape(AllYawAngs))
+          if (result /= 0) then
+              write(*,*) 'SmartRedis read failed'
+              call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
+          endif
           do idisc=1,Nad
               ActuatorDisc(idisc)%YawAng = AllYawAngs(idisc)
               ActuatorDisc(idisc)%RotN(1)=cos(ActuatorDisc(idisc)%YawAng*conrad)*cos(ActuatorDisc(idisc)%TiltAng*conrad)
@@ -390,9 +401,10 @@ contains
     !*******************************************************************************
 
       use param, only: itime, initstat, dt
+      use MPI
 
       implicit none
-      integer :: idisc,result
+      integer :: idisc,result,ierr
       real(kind=c_double), dimension(Nad) :: AllPowers
       real(kind=c_double), dimension(1) :: simulation_done, controller_done
 
@@ -400,6 +412,10 @@ contains
           AllPowers = [(ActuatorDisc(idisc)%Power, idisc=1,Nad)]
           if (nrank==0) then
               result = client%put_tensor(trim(name_prefix)//'_turbine_powers', AllPowers, shape(AllPowers))
+              if (result /= 0) then
+                  write(*,*) 'SmartRedis write failed'
+                  call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
+              endif
           endif
       endif
 
@@ -408,12 +424,20 @@ contains
       if (nrank==0) then
           write(*,*) 'setting smartredis controller_done = 0'
           result = client%put_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
+          if (result /= 0) then
+              write(*,*) 'SmartRedis write failed'
+              call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
+          endif
       end if
 
       simulation_done(1) = 1
       if (nrank==0) then
           write (*,*) 'setting smartredis simulation_done = 1'
           result = client%put_tensor(trim(name_prefix)//'_sim_done', simulation_done, shape(simulation_done))
+          if (result /= 0) then
+              write(*,*) 'SmartRedis write failed'
+              call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
+          endif
       endif
 
       return

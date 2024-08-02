@@ -412,9 +412,11 @@ contains
     use actuator_disc_model, only: client
     use iso_c_binding
     use param, only : t,instance
+    use MPI
+
     real(mytype),intent(in),dimension(xstart(1):xend(1),xstart(2):xend(2),xstart(3):xend(3)) :: ux1, uy1, uz1
     real(kind=c_double), dimension(3) :: probe
-    integer :: i, result
+    integer :: i, result, ierr
     character(len=12) :: name_prefix, name_suffix
 
     if (nprobes<=0) return
@@ -428,7 +430,10 @@ contains
             probe(2) = uy1(nxprobes(i), nyprobes(i), nzprobes(i))
             probe(3) = uz1(nxprobes(i), nyprobes(i), nzprobes(i))
             result = client%put_tensor(trim(name_prefix)//'_probe_'//trim(name_suffix), probe, shape(probe))
-!            local_probe_size = local_probe_size +1
+            if (result /= 0) then
+                write(*,*) 'SmartRedis write failed'
+                call MPI_ABORT(MPI_COMM_WORLD, result, ierr)
+            endif
         end if
     end do
 
