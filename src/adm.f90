@@ -63,12 +63,14 @@ contains
 
 !      if ((icontrolfreq>=1).and.(nrank==0)) then
       if (icontrolfreq>=1) then
-          write(*,*) '==========================================================='
-          write(*,*) 'Initialising smartredis database'
-          write(*,*) '==========================================================='
+          if (nrank==0) then
+              write(*,*) '==========================================================='
+              write(*,*) 'Initialising smartredis database'
+              write(*,*) 'instance = ', trim(name_prefix)
+              write(*,*) '==========================================================='
+          end if
           result = client%initialize("smartredis_database")
           write(name_prefix, '(I0)') instance
-          write(*,*) 'instance = ', trim(name_prefix)
           if (result .ne. 0) error stop 'client%initialize failed'
       end if
 
@@ -152,19 +154,15 @@ contains
       ! Specify the actuator discs
       Nad=Ndiscs
       controller_done(1) = 0
-      write(*,*) 'Checking if smartredis database updated?'
       do while (int(controller_done(1)) == 0)
           result = client%unpack_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
       end do
-      write(*,*) "Controller updated yaws on smartredis = ", int(controller_done(1))
 
       if (Nad>0) then
-          write(*,*) 'Reading yaw angles from smartredis database'
+!          write(*,*) 'Reading yaw angles from smartredis database'
           ! Read the disc data
           ! Fill AllYawAngs with YawAng values from each ActuatorDisc
-!          AllYawAngs = [(ActuatorDisc(idisc)%YawAng, idisc=1,Nad)]
           result = client%unpack_tensor(trim(name_prefix)//'_yaws', AllYawAngs, shape(AllYawAngs))
-          write(*,*) 'Yaws: ', AllYawAngs
           do idisc=1,Nad
               ActuatorDisc(idisc)%YawAng = AllYawAngs(idisc)
               ActuatorDisc(idisc)%RotN(1)=cos(ActuatorDisc(idisc)%YawAng*conrad)*cos(ActuatorDisc(idisc)%TiltAng*conrad)
@@ -408,13 +406,13 @@ contains
       ! TODO: Do we need to check if done on all mpi (allign mpi
       controller_done(1) = 0
       if (nrank==0) then
-          write(*,*) 'setting controller_done = 0'
+          write(*,*) 'setting smartredis controller_done = 0'
           result = client%put_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
       end if
 
       simulation_done(1) = 1
       if (nrank==0) then
-          write (*,*) 'setting simulation_done = 1'
+          write (*,*) 'setting smartredis simulation_done = 1'
           result = client%put_tensor(trim(name_prefix)//'_sim_done', simulation_done, shape(simulation_done))
       endif
 
