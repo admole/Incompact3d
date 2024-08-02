@@ -61,14 +61,15 @@ contains
       real :: temp
       real(mytype) :: xmesh,ymesh,zmesh,deltax,deltay,deltaz,deltan,deltar,disc_thick,hgrid,projected_x,projected_y,projected_z
 
-      if ((icontrolfreq>=1).and.(nrank==0)) then
+!      if ((icontrolfreq>=1).and.(nrank==0)) then
+      if (icontrolfreq>=1) then
           write(*,*) '==========================================================='
           write(*,*) 'Initialising smartredis database'
           write(*,*) '==========================================================='
           result = client%initialize("smartredis_database")
           write(name_prefix, '(I0)') instance
           write(*,*) 'instance = ', trim(name_prefix)
-          !  if (result .ne. SRNoError) error stop 'client%initialize failed'
+          if (result .ne. 0) error stop 'client%initialize failed'
       end if
 
       ! ADM not yet set-up for stretched grids
@@ -163,15 +164,13 @@ contains
           ! Fill AllYawAngs with YawAng values from each ActuatorDisc
 !          AllYawAngs = [(ActuatorDisc(idisc)%YawAng, idisc=1,Nad)]
           result = client%unpack_tensor(trim(name_prefix)//'_yaws', AllYawAngs, shape(AllYawAngs))
+          write(*,*) 'Yaws: ', AllYawAngs
           do idisc=1,Nad
               ActuatorDisc(idisc)%YawAng = AllYawAngs(idisc)
               ActuatorDisc(idisc)%RotN(1)=cos(ActuatorDisc(idisc)%YawAng*conrad)*cos(ActuatorDisc(idisc)%TiltAng*conrad)
               ActuatorDisc(idisc)%RotN(2)=sin(ActuatorDisc(idisc)%TiltAng*conrad)
               ActuatorDisc(idisc)%RotN(3)=sin(ActuatorDisc(idisc)%YawAng*conrad)
           end do
-
-          controller_done(1) = 0
-          result = client%put_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
 
           ! Compute Gamma
           call actuator_disc_model_compute_gamma(Nad,admCoords)
@@ -397,17 +396,27 @@ contains
       implicit none
       integer :: idisc,result
       real(kind=c_double), dimension(Nad) :: AllPowers
-      real(kind=c_double), dimension(1) :: simulation_done
+      real(kind=c_double), dimension(1) :: simulation_done, controller_done
 
       if (Nad>0) then
           AllPowers = [(ActuatorDisc(idisc)%Power, idisc=1,Nad)]
-          result = client%put_tensor(trim(name_prefix)//'_turbine_powers', AllPowers, shape(AllPowers))
+          if (nrank==0) then
+              result = client%put_tensor(trim(name_prefix)//'_turbine_powers', AllPowers, shape(AllPowers))
+          endif
       endif
 
-!      send probe data...
+      ! TODO: Do we need to check if done on all mpi (allign mpi
+      controller_done(1) = 0
+      if (nrank==0) then
+          write(*,*) 'setting controller_done = 0'
+          result = client%put_tensor(trim(name_prefix)//'_yaws_done', controller_done, shape(controller_done))
+      end if
 
       simulation_done(1) = 1
-      result = client%put_tensor(trim(name_prefix)//'_sim_done', simulation_done, shape(simulation_done))
+      if (nrank==0) then
+          write (*,*) 'setting simulation_done = 1'
+          result = client%put_tensor(trim(name_prefix)//'_sim_done', simulation_done, shape(simulation_done))
+      endif
 
       return
 

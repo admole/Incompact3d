@@ -11,5 +11,5 @@ sleep 20
 LD_LIBRARY_PATH=/home/amole/Documents/Incompact3d/build/smartredis-build/smartredis/install/lib:$LD_LIBRARY_PATH \
 export LD_LIBRARY_PATH
 
-# mpirun -np 8 ../../../../build/bin/xcompact3d > log.x3d
-exec ../../../../../build/bin/xcompact3d > log.x3d
+exec mpirun -np 4 ../../../../../build/bin/xcompact3d > log.x3d
+# exec ../../../../../build/bin/xcompact3d > log.x3d

@@ -38,15 +38,17 @@ client = Client(address=db_address, cluster=False)
 print(f'created client at address {db_address}')
 
 instance = 1
+n_probes = 2
 
 client.put_tensor(f"{instance}_sim_done", np.array([0.]))
-client.put_tensor(f"{instance}_yaws_done", np.array([1.]))
+client.put_tensor(f"{instance}_yaws_done", np.array([0.]))
 
-for it in range(100):
+for it in range(101):
     print(f'\nIteration: {it}')
     yaws = it%60. - 30.
     print(f'Yaw angle: {yaws}')
     print('Sending...')
+    print(f'dtype = {np.array([yaws]).dtype}')
     client.put_tensor(f"{instance}_yaws", np.array([yaws]))
     client.put_tensor(f"{instance}_yaws_done", np.array([1.]))
     print(f'Sent {instance}_yaws_done = {client.get_tensor(f"{instance}_yaws_done")}')
@@ -56,11 +58,14 @@ for it in range(100):
     print('Simulation updated')
     # read reward, observation
     powers = client.get_tensor(f"{instance}_turbine_powers")
-    obs = client.get_tensor(f"{instance}_probe_data")
-
-
     print(f'Turbine Powers = {powers}')
-    print(f'Observations = {obs}')
+
+    observations = np.zeros([n_probes, 3])
+    for i in range(n_probes):
+        print(f'Probe key: {f"{instance}_probe_{i+1}"}')
+        observations[i] = client.get_tensor(f"{instance}_probe_{i+1}")
+    print(f'Observations = {observations}')
+
     total_power = sum(powers)
     client.put_tensor(f"{instance}_sim_done", np.array([0.]))
 

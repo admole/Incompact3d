@@ -413,24 +413,32 @@ contains
     use iso_c_binding
     use param, only : t,instance
     real(mytype),intent(in),dimension(xstart(1):xend(1),xstart(2):xend(2),xstart(3):xend(3)) :: ux1, uy1, uz1
-    real(kind=c_double), dimension(nprobes,3) :: AllProbes
-    real(kind=c_double), dimension(nprobes,3) :: testProbes
-    real(kind=c_double), dimension(1) :: oneProbe
+    real(kind=c_double), dimension(3) :: probe
     integer :: i, result
-    character(len=12) :: name_prefix
+    character(len=12) :: name_prefix, name_suffix
 
     if (nprobes<=0) return
 
     write(name_prefix, '(I0)') instance
 
     do i = 1, nprobes
-        AllProbes(i, 1) = ux1(nxprobes(i), nyprobes(i), nzprobes(i))
-        AllProbes(i, 2) = uy1(nxprobes(i), nyprobes(i), nzprobes(i))
-        AllProbes(i, 3) = uz1(nxprobes(i), nyprobes(i), nzprobes(i))
+        if (rankprobes(i)) then
+            write(name_suffix, '(I0)') i
+            probe(1) = ux1(nxprobes(i), nyprobes(i), nzprobes(i))
+            probe(2) = uy1(nxprobes(i), nyprobes(i), nzprobes(i))
+            probe(3) = uz1(nxprobes(i), nyprobes(i), nzprobes(i))
+            result = client%put_tensor(trim(name_prefix)//'_probe_'//trim(name_suffix), probe, shape(probe))
+!            local_probe_size = local_probe_size +1
+        end if
     end do
 
-    result = client%put_tensor(trim(name_prefix)//'_probe_data', AllProbes, shape(AllProbes))
-
+!    Rather than passing individual probes could pass them all but need to collect from ranks
+!    call MPI_GATHERV(LocalProbes, local_probe_size, c_double, &
+!                     AllProbes, recvcounts, displs, c_double, &
+!                     0, MPI_COMM_WORLD, result)
+!    if (nrank==0) then
+!        result = client%put_tensor(trim(name_prefix)//'_probe_data', AllProbes, shape(AllProbes))
+!    end if
   end subroutine write_probes_smartredis
 
   !############################################################################
