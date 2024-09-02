@@ -289,9 +289,9 @@ contains
           call write_probes_smartredis(ux1, uy1, uz1)
       end if
       call turbine_output()
+    elseif (icontrolfreq==0) then
+        call write_probes(ux1, uy1, uz1, pp3, phi1)
     endif
-
-    call write_probes(ux1, uy1, uz1, pp3, phi1)
 
   end subroutine run_postprocessing
   !##################################################################
