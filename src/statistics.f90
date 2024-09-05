@@ -16,7 +16,7 @@ module stats
   integer :: stats_time
   
   private
-  public overall_statistic
+  public overall_statistic, init_statistic
 
 contains
 
@@ -374,7 +374,7 @@ contains
   subroutine update_average_scalar(um, ux, ep)
 
     use decomp_2d, only : xsize, xstS, xenS, fine_to_coarseS
-    use param, only : itime, initstat,istatfreq
+    use param, only : itime, initstat, istatfreq, icontrolfreq
     use var, only : di1, tmean
 
     implicit none
@@ -386,7 +386,7 @@ contains
     di1 = one_minus_ep1(ux, ep)
     call fine_to_coarseS(1, di1, tmean)
 
-    stat_inc = 1._mytype/real((itime-initstat)/istatfreq+1, kind=mytype)
+    stat_inc = 1._mytype/real(mod(itime,icontrolfreq)/istatfreq+1, kind=mytype)
     um = um + (tmean - um) * stat_inc
 
   end subroutine update_average_scalar

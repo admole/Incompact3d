@@ -253,11 +253,12 @@ contains
 
     use decomp_2d, only : xsize, ph1
     use visu, only  : write_snapshot, end_snapshot
-    use stats, only : overall_statistic
+    use stats, only : overall_statistic, init_statistic
 
     use var, only : nzmsize
     use var, only : itime
     use var, only : numscalar, nrhotime, npress
+    use var, only : umean, vmean, wmean 
 
     use turbine, only : turbine_output
     use probes, only : write_probes, write_probes_smartredis
@@ -286,7 +287,8 @@ contains
 
     if (iturbine.ne.0) then
       if (mod(itime,icontrolfreq)==0) then
-          call write_probes_smartredis(ux1, uy1, uz1)
+          call write_probes_smartredis(umean, vmean, wmean)
+          call init_statistic()
       end if
       call turbine_output()
     elseif (icontrolfreq==0) then
