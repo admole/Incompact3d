@@ -119,9 +119,9 @@ contains
                  open(15,File='disc'//trim(int2str(idisc))//'.adm', position="append", status='old', action='read')
                  backspace(15)
                  read(15,*) temp,temp,actuatordisc(idisc)%UF,actuatordisc(idisc)%Power,actuatordisc(idisc)%Thrust,actuatordisc(idisc)%Udisc_ave,actuatordisc(idisc)%Power_ave,actuatordisc(idisc)%Thrust_ave,temp,temp,temp
-                 actuatordisc(idisc)%Udisc_ave=actuatordisc(idisc)%Udisc_ave*(itime-initstat+1)
-                 actuatordisc(idisc)%Power_ave=actuatordisc(idisc)%Power_ave*(itime-initstat+1)
-                 actuatordisc(idisc)%Thrust_ave=actuatordisc(idisc)%Thrust_ave*(itime-initstat+1)
+                 actuatordisc(idisc)%Udisc_ave=actuatordisc(idisc)%Udisc_ave*(mod(itime,icontrolfreq))
+                 actuatordisc(idisc)%Power_ave=actuatordisc(idisc)%Power_ave*(mod(itime,icontrolfreq))
+                 actuatordisc(idisc)%Thrust_ave=actuatordisc(idisc)%Thrust_ave*(mod(itime,icontrolfreq))
                  close(15)
              end do
          endif
@@ -280,7 +280,7 @@ contains
         
       use decomp_2d, only: xsize
       use MPI
-      use param, only: dx, dy, dz, dt, itime, initstat, rho_air, T_relax, dBL, ustar
+      use param, only: dx, dy, dz, dt, itime, initstat, rho_air, T_relax, dBL, ustar, icontrolfreq
       use var, only: Fdiscx, Fdiscy, Fdiscz, GammaDisc
         
       implicit none
@@ -339,14 +339,18 @@ contains
          Fdiscz(:,:,:)=Fdiscz(:,:,:)-actuatordisc(idisc)%Thrust*GammaDisc(:,:,:,idisc)*(-actuatordisc(idisc)%RotN(3))/(dx*dy*dz)
       enddo
         
-      ! Compute statistics
-      if (itime>=initstat) then
-         do idisc=1,Nad
-            actuatordisc(idisc)%Udisc_ave=actuatordisc(idisc)%Udisc_ave+actuatordisc(idisc)%UF
-            actuatordisc(idisc)%Power_ave=actuatordisc(idisc)%Power_ave+actuatordisc(idisc)%Power
-            actuatordisc(idisc)%Thrust_ave=actuatordisc(idisc)%Thrust_ave+actuatordisc(idisc)%Thrust 
-         enddo
-      endif
+      ! compute statistics
+      do idisc=1,Nad
+          ! reset statistics
+          if (mod(itime,icontrolfreq)==1) then
+              actuatordisc(idisc)%Udisc_ave = 0.0_mytype
+              actuatordisc(idisc)%Power_ave = 0.0_mytype
+              actuatordisc(idisc)%Thrust_ave = 0.0_mytype
+          end if
+          actuatordisc(idisc)%Udisc_ave=actuatordisc(idisc)%Udisc_ave+actuatordisc(idisc)%UF
+          actuatordisc(idisc)%Power_ave=actuatordisc(idisc)%Power_ave+actuatordisc(idisc)%Power
+          actuatordisc(idisc)%Thrust_ave=actuatordisc(idisc)%Thrust_ave+actuatordisc(idisc)%Thrust
+      enddo
 
       return
 
@@ -358,7 +362,7 @@ contains
     !
     !*******************************************************************************
 
-      use param, only: itime, initstat, dt
+      use param, only: itime, initstat, icontrolfreq, dt
 
       implicit none
       integer, intent(in) :: dump_no
@@ -377,9 +381,9 @@ contains
                           actuatordisc(idisc)%UF,&
                           actuatordisc(idisc)%Power,&
                           actuatordisc(idisc)%Thrust,&
-                          actuatordisc(idisc)%Udisc_ave/(itime-initstat+1),&
-                          actuatordisc(idisc)%Power_ave/(itime-initstat+1),&
-                          actuatordisc(idisc)%Thrust_ave/(itime-initstat+1),&
+                          actuatordisc(idisc)%Udisc_ave/(mod(itime,icontrolfreq)),&
+                          actuatordisc(idisc)%Power_ave/(mod(itime,icontrolfreq)),&
+                          actuatordisc(idisc)%Thrust_ave/(mod(itime,icontrolfreq)),&
                           actuatordisc(idisc)%alpha,&
                           actuatordisc(idisc)%YawAng,&
                           actuatordisc(idisc)%TiltAng
@@ -409,7 +413,7 @@ contains
       real(kind=c_double), dimension(1) :: simulation_done, controller_done
 
       if (Nad>0) then
-          AllPowers = [(ActuatorDisc(idisc)%Power, idisc=1,Nad)]
+          AllPowers = [(ActuatorDisc(idisc)%Power_ave, idisc=1,Nad)]
           if (nrank==0) then
               result = client%put_tensor(trim(name_prefix)//'_turbine_powers', AllPowers, shape(AllPowers))
               if (result /= 0) then
