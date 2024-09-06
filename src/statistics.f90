@@ -386,7 +386,7 @@ contains
     di1 = one_minus_ep1(ux, ep)
     call fine_to_coarseS(1, di1, tmean)
 
-    stat_inc = 1._mytype/real(mod(itime,icontrolfreq)/istatfreq+1, kind=mytype)
+    stat_inc = 1._mytype/real(mod(itime-1,icontrolfreq)/istatfreq+1, kind=mytype)
     um = um + (tmean - um) * stat_inc
 
   end subroutine update_average_scalar

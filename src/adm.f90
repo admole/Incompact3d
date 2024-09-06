@@ -119,9 +119,9 @@ contains
                  open(15,File='disc'//trim(int2str(idisc))//'.adm', position="append", status='old', action='read')
                  backspace(15)
                  read(15,*) temp,temp,actuatordisc(idisc)%UF,actuatordisc(idisc)%Power,actuatordisc(idisc)%Thrust,actuatordisc(idisc)%Udisc_ave,actuatordisc(idisc)%Power_ave,actuatordisc(idisc)%Thrust_ave,temp,temp,temp
-                 actuatordisc(idisc)%Udisc_ave=actuatordisc(idisc)%Udisc_ave*(mod(itime,icontrolfreq))
-                 actuatordisc(idisc)%Power_ave=actuatordisc(idisc)%Power_ave*(mod(itime,icontrolfreq))
-                 actuatordisc(idisc)%Thrust_ave=actuatordisc(idisc)%Thrust_ave*(mod(itime,icontrolfreq))
+                 actuatordisc(idisc)%Udisc_ave=actuatordisc(idisc)%Udisc_ave*(mod(itime-1,icontrolfreq)+1)
+                 actuatordisc(idisc)%Power_ave=actuatordisc(idisc)%Power_ave*(mod(itime-1,icontrolfreq)+1)
+                 actuatordisc(idisc)%Thrust_ave=actuatordisc(idisc)%Thrust_ave*(mod(itime-1,icontrolfreq)+1)
                  close(15)
              end do
          endif
@@ -381,9 +381,9 @@ contains
                           actuatordisc(idisc)%UF,&
                           actuatordisc(idisc)%Power,&
                           actuatordisc(idisc)%Thrust,&
-                          actuatordisc(idisc)%Udisc_ave/(mod(itime,icontrolfreq)),&
-                          actuatordisc(idisc)%Power_ave/(mod(itime,icontrolfreq)),&
-                          actuatordisc(idisc)%Thrust_ave/(mod(itime,icontrolfreq)),&
+                          actuatordisc(idisc)%Udisc_ave/(mod(itime-1,icontrolfreq)+1),&
+                          actuatordisc(idisc)%Power_ave/(mod(itime-1,icontrolfreq)+1),&
+                          actuatordisc(idisc)%Thrust_ave/(mod(itime-1,icontrolfreq)+1),&
                           actuatordisc(idisc)%alpha,&
                           actuatordisc(idisc)%YawAng,&
                           actuatordisc(idisc)%TiltAng
@@ -404,7 +404,7 @@ contains
     !
     !*******************************************************************************
 
-      use param, only: itime, initstat, dt
+      use param, only: itime, initstat, dt, icontrolfreq
       use MPI
 
       implicit none
@@ -413,7 +413,7 @@ contains
       real(kind=c_double), dimension(1) :: simulation_done, controller_done
 
       if (Nad>0) then
-          AllPowers = [(ActuatorDisc(idisc)%Power_ave, idisc=1,Nad)]
+          AllPowers = [(ActuatorDisc(idisc)%Power_ave/icontrolfreq, idisc=1,Nad)]
           if (nrank==0) then
               result = client%put_tensor(trim(name_prefix)//'_turbine_powers', AllPowers, shape(AllPowers))
               if (result /= 0) then
@@ -423,7 +423,6 @@ contains
           endif
       endif
 
-      ! TODO: Do we need to check if done on all mpi (allign mpi
       controller_done(1) = 0
       if (nrank==0) then
           write(*,*) 'setting smartredis controller_done = 0'
